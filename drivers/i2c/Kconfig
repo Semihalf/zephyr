@@ -30,11 +30,24 @@ config I2C_STATS
 	  Enable I2C Stats.
 
 config I2C_DUMP_MESSAGES
-	bool "Log all I2C transactions"
+	bool "Log I2C transactions"
 	depends on LOG
 	depends on I2C_LOG_LEVEL_DBG
 	help
 	  Dump every I2C transaction to the system log as debug level log messages.
+
+config I2C_DUMP_MESSAGES_FILTER
+	bool "Filter I2C transactions being logged"
+	depends on I2C_DUMP_MESSAGES
+	help
+	  Filter dumped messages for specified buses and addresses.
+	  The filter table is defined in the device-tree using the compatible string of
+	  "zephyr,i2c-dump-filter" and phandles to the devices that need to be traced.
+	  Example of device-tree node:
+	  i2c-dump-filter {
+	    compatible = "zephyr,i2c-dump-filter";
+	    devices = < &display0 >, < &sensor3 >;
+	  };
 
 config I2C_CALLBACK
 	bool "I2C asynchronous callback API"

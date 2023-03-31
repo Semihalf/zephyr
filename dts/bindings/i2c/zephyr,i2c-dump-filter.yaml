@@ -1,0 +1,16 @@
+# Copyright 2023 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Filter for i2c messages dump
+
+compatible: "zephyr,i2c-dump-filter"
+
+include: base.yaml
+
+properties:
+  status:
+    const: "okay"
+
+  devices:
+    required: true
+    type: phandles
