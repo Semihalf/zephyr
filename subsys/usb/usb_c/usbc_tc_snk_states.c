@@ -79,7 +79,11 @@ static void sink_power_sub_states(const struct device *dev)
  */
 void tc_unattached_snk_entry(void *obj)
 {
+	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+
 	LOG_INF("Unattached.SNK");
+
+	usbc_request(tc->dev, REQUEST_NOP);
 }
 
 /**
@@ -109,6 +113,8 @@ void tc_attach_wait_snk_entry(void *obj)
 	LOG_INF("AttachWait.SNK");
 
 	tc->cc_state = TC_CC_NONE;
+
+	usbc_request(tc->dev, REQUEST_NOP);
 }
 
 /**
@@ -122,6 +128,9 @@ void tc_attach_wait_snk_run(void *obj)
 	const struct device *vbus = data->vbus;
 	enum tc_cc_states new_cc_state;
 	bool vbus_present;
+
+	/* useful if you have a long delay in usb-c thread, may be worth using the ifdef here */
+	usbc_request(dev, REQUEST_NOP);
 
 	if (tcpc_is_cc_rp(tc->cc1) || tcpc_is_cc_rp(tc->cc2)) {
 		new_cc_state = TC_CC_DFP_ATTACHED;
@@ -144,6 +153,7 @@ void tc_attach_wait_snk_run(void *obj)
 	/* Transition to UnAttached.SNK if CC lines are open */
 	if (new_cc_state == TC_CC_NONE) {
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+		usbc_request(tc->dev, REQUEST_NOP);
 	}
 
 	/*
@@ -197,6 +207,7 @@ void tc_attached_snk_run(void *obj)
 	/* Detach detection */
 	if (usbc_vbus_check_level(vbus, TC_VBUS_PRESENT) == false) {
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+		usbc_request(tc->dev, REQUEST_NOP);
 		return;
 	}
 

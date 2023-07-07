@@ -345,6 +345,8 @@ void pe_message_received(const struct device *dev)
 	struct policy_engine *pe = data->pe;
 
 	atomic_set_bit(pe->flags, PE_FLAGS_MSG_RECEIVED);
+
+	usbc_request(dev, REQUEST_NOP);
 }
 
 /**
@@ -422,6 +424,8 @@ void pe_set_state(const struct device *dev, const enum usbc_pe_state state)
 
 	__ASSERT(state < ARRAY_SIZE(pe_states), "invalid pe_state %d", state);
 	smf_set_state(SMF_CTX(data->pe), &pe_states[state]);
+
+	usbc_request(dev, REQUEST_NOP);
 }
 
 /**

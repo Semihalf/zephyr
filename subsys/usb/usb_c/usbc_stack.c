@@ -37,7 +37,9 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		k_thread_suspend(port->port_thread);
 	}
 
-	k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	if (k_fifo_is_empty(&port->request_fifo)) {
+		k_msleep(CONFIG_USBC_STATE_MACHINE_CYCLE_TIME);
+	}
 }
 
 #define USBC_SUBSYS_INIT(inst)                                                                     \
@@ -113,7 +115,10 @@ int usbc_suspend(const struct device *dev)
 
 	/* Add private suspend request to fifo */
 	data->request.val = PRIV_PORT_REQUEST_SUSPEND;
-	k_fifo_put(&data->request_fifo, &data->request);
+
+	if (k_fifo_is_empty(&data->request_fifo)) {
+		k_fifo_put(&data->request_fifo, &data->request);
+	}
 
 	return 0;
 }
@@ -128,7 +133,12 @@ int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
 
 	/* Add public request to fifo */
 	data->request.val = req;
-	k_fifo_put(&data->request_fifo, &data->request);
+	if (k_fifo_is_empty(&data->request_fifo)) {
+		/* If fifo is not empty, it contains the same object as would be added,
+		 * what would cause the infinite loop when iterating over it.
+		 */
+		k_fifo_put(&data->request_fifo, &data->request);
+	}
 
 	return 0;
 }
