@@ -13,7 +13,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_tc_common_internal.h"
 
 static const struct smf_state tc_states[TC_STATE_COUNT];
-static void tc_init(const struct device *dev);
+static int tc_init(const struct device *dev);
 
 /**
  * @brief Initializes the state machine and enters the Disabled state
@@ -55,7 +55,11 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 	/* fall through */
 	case SM_INIT:
 		/* Initialize the Type-C layer */
-		tc_init(dev);
+		if (tc_init(dev) < 0) {
+			LOG_ERR("Error initializing Type-C layer");
+			break;
+		}
+
 		data->tc_sm_state = SM_RUN;
 	/* fall through */
 	case SM_RUN:
@@ -66,7 +70,13 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		}
 
 		/* Sample CC lines */
-		tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2);
+		if (tcpc_get_cc(tcpc, &tc->cc1, &tc->cc2) < 0) {
+			/* If this function fails, it may mean that the TCPC is in sleep mode
+			 * so we can assume that the CC lines are open
+			 */
+			tc->cc1 = TC_CC_VOLT_OPEN;
+			tc->cc2 = TC_CC_VOLT_OPEN;
+		}
 
 		/* Detect polarity */
 		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
@@ -100,11 +110,12 @@ bool tc_is_in_attached_state(const struct device *dev)
 /**
  * @brief Initializes the Type-C layer
  */
-static void tc_init(const struct device *dev)
+static int tc_init(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct tc_sm_t *tc = data->tc;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	/* Initialize the timers */
 	usbc_timer_init(&tc->tc_t_error_recovery, TC_T_ERROR_RECOVERY_SOURCE_MIN_MS);
@@ -118,7 +129,11 @@ static void tc_init(const struct device *dev)
 	tc->flags = ATOMIC_INIT(0);
 
 	/* Initialize the TCPC */
-	tcpc_init(tcpc);
+	ret = tcpc_init(tcpc);
+	if (ret < 0) {
+		LOG_ERR("TCPC initialization failed: %d", ret);
+		return ret;
+	}
 
 #ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 	/* Stop sourcing VBUS */
@@ -134,6 +149,8 @@ static void tc_init(const struct device *dev)
 	 * short while if this is a system reset.
 	 */
 	tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+
+	return 0;
 }
 
 /**
@@ -196,14 +213,23 @@ static void tc_cc_open_entry(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	const struct device *tcpc = data->tcpc;
+	int ret;
 
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
 
 	/* Disable VCONN */
-	tcpc_set_vconn(tcpc, false);
+	ret = tcpc_set_vconn(tcpc, false);
+	if (ret < 0) {
+		LOG_ERR("Set vconn failed: %d", ret);
+		return;
+	}
 
 	/* Open CC lines */
-	tcpc_set_cc(tcpc, TC_CC_OPEN);
+	ret = tcpc_set_cc(tcpc, TC_CC_OPEN);
+	if (ret < 0) {
+		LOG_ERR("Set CC lines failed: %d", ret);
+		return;
+	}
 }
 
 /**
