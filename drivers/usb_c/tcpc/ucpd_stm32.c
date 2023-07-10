@@ -1027,10 +1027,9 @@ static int ucpd_transmit_data(const struct device *dev,
 /**
  * @brief Tests if a received Power Delivery message is pending
  *
- * @retval true if message is pending, else false
+ * @retval 1 if message is pending, else 0
  */
-static bool ucpd_is_rx_pending_msg(const struct device *dev,
-				   enum pd_packet_type *type)
+static int ucpd_is_rx_pending_msg(const struct device *dev, enum pd_packet_type *type)
 {
 	struct tcpc_data *data = dev->data;
 	bool ret;
