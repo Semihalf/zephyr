@@ -1,0 +1,11 @@
+# USB-C STM32 TCPC device configuration options
+
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_PPC_NX20P348X
+	bool "USB-C TCPC device controller driver"
+	default y
+	depends on DT_HAS_NXP_NX20P348X_ENABLED
+	help
+	  Enable USB-C PPC support for nxp nx20p348x family

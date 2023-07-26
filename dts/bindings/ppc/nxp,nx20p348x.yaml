@@ -1,0 +1,13 @@
+# Copyright 2023 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP NX20P348x Power path controllers family
+
+compatible: "nxp,nx20p348x"
+
+include: [base.yaml, i2c-device.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: interrupt pin
