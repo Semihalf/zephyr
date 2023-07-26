@@ -1,0 +1,32 @@
+# Power path controllers configuration options
+
+# Copyright 2023 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBC_PPC_DRIVER
+	bool "USB-C PPC drivers"
+	help
+	  Enable Power Path Controllers drivers
+
+if USBC_PPC_DRIVER
+
+config USBC_PPC_INIT_PRIORITY
+	int "USBC PPC driver init priority"
+	default 82
+	help
+	  USB-C device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the USBC stack
+	  so that it can start before the USBC sub-system.
+
+config USBC_PPC_SHELL
+	bool "Shell commands for PPC"
+	default n
+	help
+	  Adds useful shell commands to manipulate and debug the PPCs
+
+module = USBC_PPC
+module-str = usbc-ppc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_PPC_DRIVER
