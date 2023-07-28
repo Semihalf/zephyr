@@ -15,7 +15,7 @@
 #include "nxp_nx20p348x_priv.h"
 
 #define DT_DRV_COMPAT nxp_nx20p348x
-LOG_MODULE_REGISTER(ps8xxx, CONFIG_USBC_PPC_LOG_LEVEL);
+LOG_MODULE_REGISTER(nxp_nx20p348x, CONFIG_USBC_PPC_LOG_LEVEL);
 
 /************************************************************ Structs ************************************************************/
 
@@ -110,7 +110,7 @@ static int nx20p348x_is_sourcing_vbus(const struct device *dev)
 	}
 
 	// TODO: 3481 or not...
-	return !!(sts_reg & (NX20P348X_SWITCH_STATUS_HVSRC | NX20P348X_SWITCH_STATUS_HVSRC));
+	return !!(sts_reg & (NX20P348X_SWITCH_STATUS_5VSRC | NX20P348X_SWITCH_STATUS_HVSRC));
 }
 
 static int nx20p348x_is_sinking_vbus(const struct device *dev)
@@ -291,8 +291,14 @@ static void nx20p348x_irq_handler(const struct device *port, struct gpio_callbac
 static void nx20p348x_irq_worker(struct k_work *work)
 {
 	struct nx20p348x_data *data = CONTAINER_OF(work, struct nx20p348x_data, irq_work);
+	uint8_t irq1, irq2;
 
 	LOG_INF("NX20P348X irq worker");
+
+	read_reg(data->dev, NX20P348X_INTERRUPT1_REG, &irq1);
+	read_reg(data->dev, NX20P348X_INTERRUPT2_REG, &irq2);
+
+	LOG_INF("Irq1: %02x, Irq2: %02x", irq1, irq2);
 }
 
 static int nx20p348x_dev_init(const struct device *dev)
@@ -304,13 +310,12 @@ static int nx20p348x_dev_init(const struct device *dev)
 	LOG_INF("Initializing PPC");
 
 	/* Initialize irq */
-	gpio_flags_t irq_flags = GPIO_INPUT | GPIO_INT_EDGE_FALLING;
-	ret = gpio_pin_configure(cfg->irq_gpio.port, cfg->irq_gpio.pin, irq_flags);
+	ret = gpio_pin_configure(cfg->irq_gpio.port, cfg->irq_gpio.pin, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure(cfg->irq_gpio.port, cfg->irq_gpio.pin, irq_flags);
+	ret = gpio_pin_interrupt_configure(cfg->irq_gpio.port, cfg->irq_gpio.pin, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
 		return ret;
 	}

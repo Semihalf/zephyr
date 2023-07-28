@@ -96,6 +96,7 @@ void pe_src_startup_entry(void *obj)
 {
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
 
 	LOG_INF("PE_SRC_Startup");
 

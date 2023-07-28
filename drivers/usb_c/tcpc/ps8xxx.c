@@ -170,8 +170,8 @@ int ps8xxx_tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 {
 	const struct ps8xxx_cfg *cfg = dev->config;
 
-	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_RP_MASK,
-				 TCPC_REG_ROLE_CTRL_SET(0, rp, 0, 0));
+	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL, TCPC_REG_ROLE_CTRL_RP_MASK | TCPC_REG_ROLE_CTRL_DRP_MASK,
+				 TCPC_REG_ROLE_CTRL_SET(1, rp, 0, 0));
 }
 
 int ps8xxx_tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
@@ -195,9 +195,11 @@ int ps8xxx_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 		return -EIO;
 	}
 
+	// if(pull == TC_CC_OPEN)
+	// 	pull = TC_CC_RD;
 	return tcpci_update_reg8(&cfg->bus, TCPC_REG_ROLE_CTRL,
-				 TCPC_REG_ROLE_CTRL_CC1_MASK | TCPC_REG_ROLE_CTRL_CC2_MASK,
-				 TCPC_REG_ROLE_CTRL_SET(0, 0, pull, pull));
+				 TCPC_REG_ROLE_CTRL_CC1_MASK | TCPC_REG_ROLE_CTRL_CC2_MASK | TCPC_REG_ROLE_CTRL_DRP_MASK,
+				 TCPC_REG_ROLE_CTRL_SET(1, 0, pull, pull));
 
 	return 0;
 }
@@ -501,9 +503,37 @@ int ps8xxx_tcpc_get_snk_ctrl(const struct device *dev)
 	return -ENOSYS;
 }
 
+int ps8xxx_tcpc_set_snk_ctrl(const struct device *dev, bool enable)
+{
+	const struct ps8xxx_cfg *cfg = dev->config;
+	uint8_t cmd = (enable) ? TCPC_REG_COMMAND_SNK_CTRL_HIGH : TCPC_REG_COMMAND_SNK_CTRL_LOW;
+	int ret;
+
+	LOG_INF("Command: %02x", cmd);
+
+	ret = tcpci_write_reg8(&cfg->bus, TCPC_REG_COMMAND, cmd);
+	LOG_INF("Command result: %d", ret);
+
+	return ret;
+}
+
 int ps8xxx_tcpc_get_src_ctrl(const struct device *dev)
 {
 	return -ENOSYS;
+}
+
+int ps8xxx_tcpc_set_src_ctrl(const struct device *dev, bool enable)
+{
+	const struct ps8xxx_cfg *cfg = dev->config;
+	uint8_t cmd = (enable) ? TCPC_REG_COMMAND_SRC_CTRL_HIGH : TCPC_REG_COMMAND_SRC_CTRL_LOW;
+	int ret;
+
+	LOG_INF("Command: %02x", cmd);
+
+	ret = tcpci_write_reg8(&cfg->bus, TCPC_REG_COMMAND, cmd);
+	LOG_INF("Command result: %d", ret);
+
+	return ret;
 }
 
 int ps8xxx_tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
@@ -586,7 +616,9 @@ static const struct tcpc_driver_api ps8xxx_driver_api = {
 	.set_debug_detach = ps8xxx_tcpc_set_debug_detach,
 	.set_drp_toggle = ps8xxx_tcpc_set_drp_toggle,
 	.get_snk_ctrl = ps8xxx_tcpc_get_snk_ctrl,
+	.set_snk_ctrl = ps8xxx_tcpc_set_snk_ctrl,
 	.get_src_ctrl = ps8xxx_tcpc_get_src_ctrl,
+	.set_src_ctrl = ps8xxx_tcpc_set_src_ctrl,
 	.get_chip_info = ps8xxx_tcpc_get_chip_info,
 	.set_low_power_mode = ps8xxx_tcpc_set_low_power_mode,
 	.sop_prime_enable = ps8xxx_tcpc_sop_prime_enable,

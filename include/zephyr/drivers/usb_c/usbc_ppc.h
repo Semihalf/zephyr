@@ -46,8 +46,6 @@ enum usbc_ppc_event {
 	USBC_PPC_EVENT_SNK_OVERVOLTAGE,
 };
 
-enum
-
 __subsystem struct usbc_ppc_drv {
 	int (*is_dead_battery_mode)(const struct device *dev);
 	int (*exit_dead_battery_mode)(const struct device *dev);
@@ -176,7 +174,7 @@ static inline int ppc_discharge_vbus(const struct device *dev, bool enable)
 	return api->discharge_vbus(dev, enable);
 }
 
-static inline int ppc_notify_device_connection(const struct device *dev, enum ppc_device_role role)
+static inline int ppc_notify_device_connection(const struct device *dev, enum usbc_ppc_device_role role)
 {
 	const struct usbc_ppc_drv *api = (const struct usbc_ppc_drv *)dev->api;
 

@@ -12,16 +12,16 @@
 
 // #define PPC_DUMP(inst) ppc_dump_regs(DEVICE_DT_GET(DT_DRV_INST(inst)));
 
-// #define CALL_IF_HAS_PPC(usb_node, func) COND_CODE_1(DT_NODE_HAS_PROP(usb_node, ppc), (func(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(usb_node, ppc, 0)))), ())
-#define CALL_IF_HAS_PPC(usb_node, func) func(DEVICE_DT_GET()
+#define CALL_IF_HAS_PPC(usb_node, func) COND_CODE_1(DT_NODE_HAS_PROP(usb_node, ppc), (func(DEVICE_DT_GET(DT_PHANDLE_BY_IDX(usb_node, ppc, 0)));), ())
+// #define CALL_IF_HAS_PPC(usb_node, func) func(DEVICE_DT_GET()
 
 #define X(node) ppc_dump_regs(DEVICE_DT_GET(node))
 
 static int cmd_ppc_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	//usb_c_connector
-	// DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, ppc_dump_regs);
-	DT_FOREACH_STATUS_OKAY(nxp_nx20p348x, X);
+	DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, ppc_dump_regs);
+	// DT_FOREACH_STATUS_OKAY(nxp_nx20p348x, X);
 	return 0;
 }
 
@@ -38,8 +38,8 @@ static void print_status(const struct device *dev)
 
 static int cmd_ppc_status(const struct shell *sh, size_t argc, char **argv)
 {
-	// DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, print_status);
-	DT_FOREACH_STATUS_OKAY(nxp_nx20p348x, Y);
+	DT_FOREACH_STATUS_OKAY_VARGS(usb_c_connector, CALL_IF_HAS_PPC, print_status);
+	// DT_FOREACH_STATUS_OKAY(nxp_nx20p348x, Y);
 	return 0;
 }
 

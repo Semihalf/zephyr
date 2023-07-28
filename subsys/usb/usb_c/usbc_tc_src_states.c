@@ -121,8 +121,14 @@ void tc_unattached_wait_src_exit(void *obj)
 void tc_attach_wait_src_entry(void *obj)
 {
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
+	const struct device *dev = tc->dev;
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
 
 	LOG_INF("AttachWait.SRC");
+
+	tcpc_set_snk_ctrl(data->tcpc, false);
+	tcpc_set_src_ctrl(data->tcpc, true);
 
 	/* Initialize the cc state to open */
 	tc->cc_state = TC_CC_NONE;
@@ -295,6 +301,7 @@ void tc_attached_src_exit(void *obj)
 	tc_pd_enable(dev, false);
 
 	/* Stop sourcing VBUS */
+	__ASSERT(data->policy_cb_src_en != NULL, "Callback pointer should not be NULL");
 	data->policy_cb_src_en(dev, false);
 
 	/* Stop sourcing VCONN */
